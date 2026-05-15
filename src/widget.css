@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light DOM, CSS injected globally — every custom rule below has to scope
+ * itself with `.aw-reviews-scope` ancestor so we don't clobber the host
+ * page's own .glass / .btn-glow / etc. Tailwind utilities are auto-scoped
+ * via `important: '.aw-reviews-scope'` in tailwind.config.js. */
+
+.aw-reviews-scope .glass {
+    background: rgba(139, 92, 246, 0.06);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+}
+
+.aw-reviews-scope .btn-glow {
+    position: relative;
+    overflow: hidden;
+}
+.aw-reviews-scope .btn-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+    pointer-events: none;
+}
+.aw-reviews-scope .btn-glow:hover::after { transform: translateX(100%); }
+
+.aw-reviews-scope .gold-text {
+    color: transparent;
+    background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+/* Review card hover — mirrors the partner site's existing
+   .card-hover class (lifts the card 4px). Kept scoped so it doesn't
+   stomp on any host rule with the same name. */
+.aw-reviews-scope .card-hover {
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.aw-reviews-scope .card-hover:hover {
+    transform: translateY(-4px);
+    border-color: rgba(168, 85, 247, 0.4);
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.16);
+}
+
+/* Steve-head avatar — 40×40 pixelated so the Minecraft texture
+   stays crisp. Matches the partner site's .review-avatar inline
+   `linear-gradient` placeholders that we're replacing. */
+.aw-reviews-scope .review-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(168, 85, 247, 0.18);
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.35);
+    image-rendering: pixelated;
+    flex-shrink: 0;
+}
