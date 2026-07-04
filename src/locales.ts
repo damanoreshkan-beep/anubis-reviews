@@ -1,6 +1,8 @@
 // The reviews themselves stay in their source language (each row has
 // its own `lang` column). The locales here only cover the *UI* of the
 // widget — currently just the error/empty fallbacks.
+import { pickLocale } from '@anubis/widget-core'
+
 export type Locale = 'en' | 'ru' | 'uk' | 'de' | 'pl'
 
 export const COPY = {
@@ -39,8 +41,7 @@ export const COPY = {
 export type T = typeof COPY['en']
 
 export function copyFor(lang: string | undefined | null): T {
-    const k = (lang || '').slice(0, 2).toLowerCase() as Locale
-    return (COPY[k] ?? COPY.en) as unknown as T
+    return pickLocale(COPY, lang) as unknown as T
 }
 
 // Per-review flag rendered in the corner of each card. Pairs the
