@@ -6,7 +6,7 @@
 // We use the REST endpoint directly instead of pulling in
 // `@supabase/supabase-js`. A single GET request is plenty, and
 // shaving off ~50 KB of client code keeps the widget tiny.
-import { useEffect, useState } from 'preact/hooks'
+import { useCachedResource } from '@anubis/core'
 import { copyFor, LANG_BADGE, type T } from './locales'
 
 interface Props {
@@ -29,26 +29,10 @@ interface Review {
     sort_order: number
 }
 
-// Stale-while-revalidate cache so revisits paint without a network
-// round-trip. Reviews change rarely, but we always refetch in the
-// background regardless.
+// localStorage key for the stale-while-revalidate cache (see
+// useCachedResource in @anubis/core). Reviews change rarely, so a
+// revisit paints instantly while we refetch in the background.
 const CACHE_KEY = 'aw-reviews-cache'
-
-function readCache(): Review[] | null {
-    if (typeof localStorage === 'undefined') return null
-    try {
-        const raw = localStorage.getItem(CACHE_KEY)
-        if (!raw) return null
-        const data = JSON.parse(raw)
-        if (!Array.isArray(data)) return null
-        return data as Review[]
-    } catch { return null }
-}
-
-function writeCache(list: Review[]): void {
-    if (typeof localStorage === 'undefined') return
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(list)) } catch { /* quota etc. */ }
-}
 
 async function fetchReviews(supabaseUrl: string, supabaseKey: string, limit?: number): Promise<Review[]> {
     const q = new URLSearchParams({
@@ -70,41 +54,12 @@ export function ReviewsWidget({ supabaseUrl, supabaseKey, limit, lang }: Props) 
     const url = (supabaseUrl || '').trim()
     const key = (supabaseKey || '').trim()
 
-    const [reviews, setReviews] = useState<Review[] | null>(() => readCache())
-    const [loading, setLoading] = useState(reviews === null)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        if (!url || !key) {
-            setError('missing supabase-url / supabase-key')
-            setLoading(false)
-            return
-        }
-        let cancelled = false
-        const run = () => fetchReviews(url, key, max)
-            .then(list => {
-                if (cancelled) return
-                writeCache(list)
-                setReviews(list)
-                setError(null)
-            })
-            .catch(e => {
-                if (cancelled) return
-                if (!reviews) setError(String(e?.message ?? e))
-            })
-            .finally(() => { if (!cancelled) setLoading(false) })
-        run()
-
-        // Refresh when the tab regains focus — admin edits via Studio
-        // show up the next time the visitor returns to the page.
-        const onVisible = () => { if (document.visibilityState === 'visible') run() }
-        document.addEventListener('visibilitychange', onVisible)
-        return () => {
-            cancelled = true
-            document.removeEventListener('visibilitychange', onVisible)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [url, key, max])
+    const { data: reviews, loading, error } = useCachedResource<Review[]>(
+        url && key ? CACHE_KEY : null,
+        () => fetchReviews(url, key, max),
+        [url, key, max],
+        raw => (Array.isArray(raw) ? (raw as Review[]) : null),
+    )
 
     if (!url || !key) {
         return <div class="aw-reviews-scope text-sm text-rose-400 text-center py-8">missing supabase-url / supabase-key</div>
