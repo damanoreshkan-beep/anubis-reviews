@@ -1,7 +1,7 @@
 // The reviews themselves stay in their source language (each row has
 // its own `lang` column). The locales here only cover the *UI* of the
 // widget — currently just the error/empty fallbacks.
-import { pickLocale } from '@anubis/widget-core'
+import { pickLocale } from '@anubis/core'
 
 export type Locale = 'en' | 'ru' | 'uk' | 'de' | 'pl'
 
